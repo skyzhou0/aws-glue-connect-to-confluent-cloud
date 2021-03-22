@@ -41,3 +41,43 @@ Note that the instrucutions assumes that the Confluent Cloud cluster is reachabl
     Run the job and check in the Confluent Center (Confluent Cloud Dashboard) to ensure that 500 messages have been published to the 'confluent-cloud-kafka-topic'.
 
 
+## Spark Structured Streaming application in AWS Glue ETL
+1. Creating VPC and Elastic IP (Same steps as for the Python Kafka Streaming application)
+
+2. Create an IAM role that AWS Glue ETL can assume.
+
+3. Create an S3 bucket to store the Kafka Streaming application script for the AWS Glue job.
+
+4. Create AWS Glue Kafka Connection.
+    - Create the Private Kafka private CA using openssl. Please refer to this link for details:  https://superuser.com/questions/97201/how-to-save-a-remote-server-ssl-certificate-locally-as-a-file.
+    ```bash
+    openssl s_client -showcerts -connect <broker_url>:<broker_port> </dev/null 2>/dev/null | openssl x509 -outform PEM > mycertfile.pem
+    ```
+    - Store the CA certificate "mycertfile.pem" to S3 bucket: "s3://glue-confluent-kafka/mycertifile.pem".
+    - Carete Kafka connection by providing the Connection name ("Glue-Confluent-Kafka-Connection"), Description, Connection type, Kafka bootstrap server URLs (provided by Confluent Cloud Kafka) and Kafka private CA certificate location ("s3://glue-confluent-kafka/mycertifile.pem").
+    - In the connection access, select the VPC and private subnet created at step 1. Lastly, make use of the default security group and create the connection.
+
+5. Create a Spark Structured Streaming application in AWS Glue ETL.
+    - Develop a Spark Structured Stream application. Refere to "KafkaStructuredStreaming.scala". Note this is a Structured Batch application instead of a Streaming application. However, the set-up should work without much issue.
+    - Upload to the Spark application code to a S3 Bucket: "s3://spark-streaming/KafkaStructuredStreaming.scala".
+    - The application requires to package: "org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.3". This package is contained in the "spark-sql-kafka-0-10_2.12-2.4.3.jar". Here is the link (https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/2.4.3/spark-sql-kafka-0-10_2.12-2.4.3.jar) where we can download it and upload to S3: "s3://spark-streaming/".
+
+    - Using AWS CLI to create a Glue ETL Job
+    ```bash
+        # 1. Create glue job
+    aws glue create-job \
+    --region us-west-2\
+    --name glue-confluent-job-name \
+    --role <some_role_name> \
+    --number-of-workers 2 \
+    --worker-type G.2X \
+    --command "Name=glueetl,ScriptLocation=s3://spark-streaming/KafkaStructuredStreaming.scala" \
+    --connections '{"Connections": ["Glue-Confluent-Kafka-Connection"]}'\
+    --default-arguments '{"--job-language":"scala","--class":"KafkaStructuredStreaming",
+    "--extra-jars":"s3://spark-streaming/spark-sql-kafka-0-10_2.12-2.4.3.jar",
+    "--packages":"org.apache.spark:spark-sql-kafka-0-10_2.12:2.4.3"}'
+    ```
+    - Run the Glue ETL job, and we should observe that 3 messages being published to the "confluent-cloud-kafka-topic" topic in Confluent Cloud, and the value of these messages are:
+    ```bash
+        ["bat", "mouse", "horse"]
+    ```
