@@ -3,7 +3,7 @@ How to build AWS Glue ETL Job and Connect to Confluent Cloud
 
 ## Contents
 - How to run a Python Kafka Streaming application in AWS Glue ETL that produce message to Confluent Cloud?
-- How to run a Spark Strcuture Stream application in AWS Glue ETL that produce message to Confluent Cloud?
+- How to run a Spark Structured Streaming application in AWS Glue ETL that produce message to Confluent Cloud?
 
 Note that the instrucutions assumes that the Confluent Cloud cluster is reachable via public internet.
 
@@ -39,4 +39,5 @@ Note that the instrucutions assumes that the Confluent Cloud cluster is reachabl
     - Provide API Key and Secret so that the application authentication.
     - Create AWS Glue ETL Job: providing the application scripts and using the Network Connection created. 
     Run the job and check in the Confluent Center (Confluent Cloud Dashboard) to ensure that 500 messages have been published to the 'confluent-cloud-kafka-topic'.
+
 

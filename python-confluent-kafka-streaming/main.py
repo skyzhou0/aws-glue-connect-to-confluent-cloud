@@ -1,7 +1,5 @@
 import certifi
 from importlib import reload 
-print("it works!")
-
 import os
 import site
 from setuptools.command import easy_install
@@ -11,12 +9,12 @@ reload(site)
 
 from confluent_kafka import Producer
 
-print(certifi.where())
 
 # Make sure you have 
 # 1. create 'confluent-cloud-kafka-topic' in Confluent Cloud.
 # 2. create service account with correct ACL so that Client App can it.
 # 3. create API key and secret that are associated with the created service account in Confluent Cloud.
+# So that the client application use them.
 
 p = Producer({
     'bootstrap.servers': 'borker_url',
